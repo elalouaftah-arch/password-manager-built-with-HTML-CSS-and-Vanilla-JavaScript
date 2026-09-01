@@ -1,0 +1,962 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="description" content="Secure local password manager using Web Crypto API">
+    <title>abdo | Password Manager</title>
+
+    <link rel="stylesheet" href="style.css">
+</head>
+
+<body>
+
+    <!-- Toast -->
+    <div id="toast" class="toast"></div>
+
+    <!-- =========================
+         LOCK SCREEN
+    ========================== -->
+    <div id="lockScreen" class="lock-screen">
+
+        <div class="lock-card">
+
+            <div class="brand large-brand">
+                <div class="brand-icon">V</div>
+                <div>
+                    <h1>
+                        Vault<span>X</span></h1>
+                    <small>LOCAL PASSWORD MANAGER</small>
+                </div>
+            </div>
+
+            <div class="lock-icon">
+                🔐
+            </div>
+
+            <h2 id="lockTitle">Create Your Master Password</h2>
+
+            <p id="lockDescription">
+                Your master password protects your encrypted vault.
+            </p>
+
+            <form id="masterPasswordForm">
+
+                <div class="input-group">
+                    <label for="masterPassword">Master Password</label>
+
+                    <div class="password-input">
+                        <input
+                            type="password"
+                            id="masterPassword"
+                            autocomplete="off"
+                            placeholder="Enter master password"
+                            required
+                        >
+
+                        <button
+                            type="button"
+                            class="password-toggle"
+                            data-target="masterPassword"
+                        >
+                            👀
+                        </button>
+                    </div>
+                </div>
+
+                <div
+                    class="input-group"
+                    id="confirmPasswordGroup"
+                >
+                    <label for="confirmPassword">
+                        Confirm Master Password
+                    </label>
+
+                    <div class="password-input">
+                        <input
+                            type="password"
+                            id="confirmPassword"
+                            autocomplete="off"
+                            placeholder="Confirm password"
+                        >
+
+                        <button
+                            type="button"
+                            class="password-toggle"
+                            data-target="confirmPassword"
+                        >
+                            👀
+                        </button>
+                    </div>
+                </div>
+
+                <div class="password-strength">
+                    <div class="strength-bar">
+                        <span id="strengthFill"></span>
+                    </div>
+
+                    <small id="strengthText">
+                        Password strength
+                    </small>
+                </div>
+
+                <button class="btn btn-primary full-width" type="submit">
+                    <span id="masterButtonText">
+                        Create Vault
+                    </span>
+                </button>
+
+            </form>
+
+            <div class="lock-footer">
+
+                <span>🔒 AES-256-GCM</span>
+                <span>•</span>
+                <span>PBKDF2</span>
+                <span>•</span>
+                <span>Local Only</span>
+
+            </div>
+
+        </div>
+
+    </div>
+
+
+    <!-- =========================
+         APPLICATION
+    ========================== -->
+
+    <div id="app" class="app hidden">
+
+        <!-- Sidebar -->
+
+        <aside class="sidebar">
+
+            <div class="sidebar-top">
+
+                <div class="brand">
+
+                    <div class="brand-icon">
+                        V
+                    </div>
+
+                    <div>
+                        <h1>Vault<span>X</span></h1>
+                        <small>SECURE VAULT</small>
+                    </div>
+
+                </div>
+
+                <button
+                    id="mobileSidebarClose"
+                    class="mobile-close"
+                >
+                    ×
+                </button>
+
+            </div>
+
+
+            <nav class="navigation">
+
+                <button
+                    class="nav-item active"
+                    data-page="vault"
+                >
+                    <span>▣</span>
+                    Vault
+                </button>
+
+                <button
+                    class="nav-item"
+                    data-page="favorites"
+                >
+                    <span>★</span>
+                    Favorites
+                </button>
+
+                <button
+                    class="nav-item"
+                    data-page="categories"
+                >
+                    <span>▦</span>
+                    Categories
+                </button>
+
+            </nav>
+
+
+            <div class="sidebar-section">
+
+                <div class="sidebar-title">
+                    CATEGORIES
+                </div>
+
+                <button
+                    class="category-side"
+                    data-category="All"
+                >
+                    <span class="category-dot all"></span>
+                    All Accounts
+                    <strong id="allCount">0</strong>
+                </button>
+
+                <button
+                    class="category-side"
+                    data-category="Social"
+                >
+                    <span class="category-dot social"></span>
+                    Social
+                    <strong id="socialCount">0</strong>
+                </button>
+
+                <button
+                    class="category-side"
+                    data-category="Work"
+                >
+                    <span class="category-dot work"></span>
+                    Work
+                    <strong id="workCount">0</strong>
+                </button>
+
+                <button
+                    class="category-side"
+                    data-category="Finance"
+                >
+                    <span class="category-dot finance"></span>
+                    Finance
+                    <strong id="financeCount">0</strong>
+                </button>
+
+                <button
+                    class="category-side"
+                    data-category="Shopping"
+                >
+                    <span class="category-dot shopping"></span>
+                    Shopping
+                    <strong id="shoppingCount">0</strong>
+                </button>
+
+                <button
+                    class="category-side"
+                    data-category="Other"
+                >
+                    <span class="category-dot other"></span>
+                    Other
+                    <strong id="otherCount">0</strong>
+                </button>
+
+            </div>
+
+
+            <div class="sidebar-bottom">
+
+                <button id="exportBtn" class="sidebar-action">
+                    <span>↑</span>
+                    Export Vault
+                </button>
+
+                <button id="importBtn" class="sidebar-action">
+                    <span>↓</span>
+                    Import Vault
+                </button>
+
+                <input
+                    type="file"
+                    id="importFile"
+                    accept=".json,application/json"
+                    hidden
+                >
+
+                <button id="lockBtn" class="sidebar-action danger">
+                    <span>🔒</span>
+                    Lock Vault
+                </button>
+
+            </div>
+
+        </aside>
+
+
+        <!-- Main -->
+
+        <main class="main-content">
+
+            <header class="topbar">
+
+                <button
+                    id="mobileMenu"
+                    class="mobile-menu"
+                >
+                    ☰
+                </button>
+
+                <div class="search-wrapper">
+
+                    <span class="search-icon">
+                        ⌕
+                    </span>
+
+                    <input
+                        type="search"
+                        id="searchInput"
+                        placeholder="Search accounts..."
+                        autocomplete="off"
+                    >
+
+                    <kbd>CTRL</kbd>
+                    <kbd>K</kbd>
+
+                </div>
+
+
+                <div class="top-actions">
+
+                    <button
+                        id="themeBtn"
+                        class="icon-btn"
+                        title="Toggle theme"
+                    >
+                        ☾
+                    </button>
+
+                    <button
+                        id="quickLockBtn"
+                        class="icon-btn"
+                        title="Lock vault"
+                    >
+                        🔒
+                    </button>
+
+                    <div class="security-status">
+                        <span class="status-dot"></span>
+                        Secure
+                    </div>
+
+                </div>
+
+            </header>
+
+
+            <section class="dashboard">
+
+                <div class="page-header">
+
+                    <div>
+                        <p class="eyebrow">
+                            YOUR DIGITAL VAULT
+                        </p>
+
+                        <h2 id="pageTitle">
+                            Password Vault
+                        </h2>
+
+                        <p class="page-description">
+                            Securely manage your passwords locally.
+                        </p>
+                    </div>
+
+                    <button
+                        id="addAccountBtn"
+                        class="btn btn-primary"
+                    >
+                        <span>＋</span>
+                        Add New Account
+                    </button>
+
+                </div>
+
+
+                <!-- Statistics -->
+
+                <div class="stats-grid">
+
+                    <div class="stat-card">
+
+                        <div class="stat-icon red">
+                            🔐
+                        </div>
+
+                        <div>
+                            <span>Total Accounts</span>
+                            <strong id="totalAccounts">0</strong>
+                        </div>
+
+                    </div>
+
+
+                    <div class="stat-card">
+
+                        <div class="stat-icon yellow">
+                            ★
+                        </div>
+
+                        <div>
+                            <span>Favorites</span>
+                            <strong id="favoriteCount">0</strong>
+                        </div>
+
+                    </div>
+
+
+                    <div class="stat-card">
+
+                        <div class="stat-icon green">
+                            ✓
+                        </div>
+
+                        <div>
+                            <span>Vault Status</span>
+                            <strong>Protected</strong>
+                        </div>
+
+                    </div>
+
+
+                    <div class="stat-card">
+
+                        <div class="stat-icon blue">
+                            ⏱
+                        </div>
+
+                        <div>
+                            <span>Auto Lock</span>
+                            <strong>5 min</strong>
+                        </div>
+
+                    </div>
+
+                </div>
+
+
+                <!-- Filters -->
+
+                <div class="filter-row">
+
+                    <div class="filter-tags">
+
+                        <button
+                            class="filter-tag active"
+                            data-filter="All"
+                        >
+                            All
+                        </button>
+
+                        <button
+                            class="filter-tag"
+                            data-filter="Social"
+                        >
+                            Social
+                        </button>
+
+                        <button
+                            class="filter-tag"
+                            data-filter="Work"
+                        >
+                            Work
+                        </button>
+
+                        <button
+                            class="filter-tag"
+                            data-filter="Finance"
+                        >
+                            Finance
+                        </button>
+
+                        <button
+                            class="filter-tag"
+                            data-filter="Shopping"
+                        >
+                            Shopping
+                        </button>
+
+                        <button
+                            class="filter-tag"
+                            data-filter="Other"
+                        >
+                            Other
+                        </button>
+
+                    </div>
+
+                    <select id="sortSelect">
+                        <option value="updated">
+                            Recently Updated
+                        </option>
+
+                        <option value="name">
+                            Name A-Z
+                        </option>
+
+                        <option value="category">
+                            Category
+                        </option>
+                    </select>
+
+                </div>
+
+
+                <!-- Account List -->
+
+                <div
+                    id="accountList"
+                    class="account-list"
+                ></div>
+
+
+                <!-- Empty State -->
+
+                <div
+                    id="emptyState"
+                    class="empty-state hidden"
+                >
+
+                    <div class="empty-icon">
+                        🔐
+                    </div>
+
+                    <h3>No accounts found</h3>
+
+                    <p>
+                        Add your first account to start building
+                        your encrypted vault.
+                    </p>
+
+                    <button
+                        class="btn btn-primary"
+                        id="emptyAddBtn"
+                    >
+                        Add Account
+                    </button>
+
+                </div>
+
+            </section>
+
+
+            <footer class="app-footer">
+
+                <span>
+                    🔒 End-to-end encrypted locally
+                </span>
+
+                <span>
+                    AES-GCM • PBKDF2 • Web Crypto API
+                </span>
+
+            </footer>
+
+        </main>
+
+    </div>
+
+
+    <!-- =========================
+         ACCOUNT MODAL
+    ========================== -->
+
+    <div
+        id="accountModal"
+        class="modal-overlay hidden"
+    >
+
+        <div class="modal">
+
+            <div class="modal-header">
+
+                <div>
+                    <p class="eyebrow">
+                        SECURE ENTRY
+                    </p>
+
+                    <h2 id="modalTitle">
+                        Add New Account
+                    </h2>
+                </div>
+
+                <button
+                    class="modal-close"
+                    data-close="accountModal"
+                >
+                    ×
+                </button>
+
+            </div>
+
+
+            <form id="accountForm">
+
+                <input
+                    type="hidden"
+                    id="accountId"
+                >
+
+                <div class="form-grid">
+
+                    <div class="input-group">
+
+                        <label for="title">
+                            Title / Service Name
+                        </label>
+
+                        <input
+                            type="text"
+                            id="title"
+                            placeholder="e.g. GitHub"
+                            required
+                        >
+
+                    </div>
+
+
+                    <div class="input-group">
+
+                        <label for="category">
+                            Category
+                        </label>
+
+                        <select id="category" required>
+
+                            <option value="Social">
+                                Social
+                            </option>
+
+                            <option value="Work">
+                                Work
+                            </option>
+
+                            <option value="Finance">
+                                Finance
+                            </option>
+
+                            <option value="Shopping">
+                                Shopping
+                            </option>
+
+                            <option value="Other">
+                                Other
+                            </option>
+
+                        </select>
+
+                    </div>
+
+                </div>
+
+
+                <div class="input-group">
+
+                    <label for="website">
+                        Website URL
+                    </label>
+
+                    <input
+                        type="url"
+                        id="website"
+                        placeholder="https://example.com"
+                    >
+
+                </div>
+
+
+                <div class="input-group">
+
+                    <label for="username">
+                        Username / Email
+                    </label>
+
+                    <input
+                        type="text"
+                        id="username"
+                        placeholder="username@example.com"
+                        required
+                        autocomplete="off"
+                    >
+
+                </div>
+
+
+                <div class="input-group">
+
+                    <label for="password">
+                        Password
+                    </label>
+
+                    <div class="password-input">
+
+                        <input
+                            type="password"
+                            id="password"
+                            placeholder="Enter password"
+                            required
+                            autocomplete="new-password"
+                        >
+
+                        <button
+                            type="button"
+                            class="password-toggle"
+                            data-target="password"
+                        >
+                            👁
+                        </button>
+
+                    </div>
+
+                </div>
+
+
+                <div class="generator-row">
+
+                    <button
+                        type="button"
+                        id="generatePassword"
+                        class="text-btn"
+                    >
+                        ⚡ Generate Strong Password
+                    </button>
+
+                </div>
+
+
+                <div class="modal-actions">
+
+                    <button
+                        type="button"
+                        class="btn btn-secondary"
+                        data-close="accountModal"
+                    >
+                        Cancel
+                    </button>
+
+                    <button
+                        type="submit"
+                        class="btn btn-primary"
+                    >
+                        Save Account
+                    </button>
+
+                </div>
+
+            </form>
+
+        </div>
+
+    </div>
+
+
+    <!-- =========================
+         VIEW ACCOUNT MODAL
+    ========================== -->
+
+    <div
+        id="viewModal"
+        class="modal-overlay hidden"
+    >
+
+        <div class="modal detail-modal">
+
+            <div class="modal-header">
+
+                <div class="detail-title">
+
+                    <div
+                        id="detailIcon"
+                        class="service-icon large"
+                    >
+                        V
+                    </div>
+
+                    <div>
+                        <p
+                            id="detailCategory"
+                            class="eyebrow"
+                        >
+                            SOCIAL
+                        </p>
+
+                        <h2 id="detailTitle">
+                            Account
+                        </h2>
+                    </div>
+
+                </div>
+
+                <button
+                    class="modal-close"
+                    data-close="viewModal"
+                >
+                    ×
+                </button>
+
+            </div>
+
+
+            <div class="detail-content">
+
+                <div class="detail-row">
+
+                    <span class="detail-label">
+                        Website
+                    </span>
+
+                    <a
+                        id="detailWebsite"
+                        href="#"
+                        target="_blank"
+                        rel="noopener noreferrer"
+                    >
+                        —
+                    </a>
+
+                </div>
+
+
+                <div class="detail-row">
+
+                    <span class="detail-label">
+                        Username
+                    </span>
+
+                    <div class="copy-field">
+
+                        <span id="detailUsername">
+                            —
+                        </span>
+
+                        <button
+                            class="copy-btn"
+                            data-copy="username"
+                        >
+                            📋
+                        </button>
+
+                    </div>
+
+                </div>
+
+
+                <div class="detail-row">
+
+                    <span class="detail-label">
+                        Password
+                    </span>
+
+                    <div class="copy-field">
+
+                        <span
+                            id="detailPassword"
+                            class="secret-text"
+                        >
+                            ••••••••••••
+                        </span>
+
+                        <button
+                            id="detailPasswordToggle"
+                            class="copy-btn"
+                        >
+                            👁
+                        </button>
+
+                        <button
+                            class="copy-btn"
+                            data-copy="password"
+                        >
+                            📋
+                        </button>
+
+                    </div>
+
+                </div>
+
+
+                <div class="detail-row">
+
+                    <span class="detail-label">
+                        Category
+                    </span>
+
+                    <span
+                        id="detailCategoryBadge"
+                        class="category-badge"
+                    >
+                        Social
+                    </span>
+
+                </div>
+
+            </div>
+
+
+            <div class="modal-actions">
+
+                <button
+                    id="detailEdit"
+                    class="btn btn-secondary"
+                >
+                    ✎ Edit
+                </button>
+
+                <button
+                    id="detailDelete"
+                    class="btn btn-danger"
+                >
+                    🗑 Delete
+                </button>
+
+            </div>
+
+        </div>
+
+    </div>
+
+
+    <!-- =========================
+         DELETE MODAL
+    ========================== -->
+
+    <div
+        id="deleteModal"
+        class="modal-overlay hidden"
+    >
+
+        <div class="modal small-modal">
+
+            <div class="danger-symbol">
+                !
+            </div>
+
+            <h2>Delete Account?</h2>
+
+            <p>
+                This account will be permanently removed
+                from your encrypted vault.
+            </p>
+
+            <div class="modal-actions">
+
+                <button
+                    class="btn btn-secondary"
+                    data-close="deleteModal"
+                >
+                    Cancel
+                </button>
+
+                <button
+                    id="confirmDelete"
+                    class="btn btn-danger"
+                >
+                    Delete Account
+                </button>
+
+            </div>
+
+        </div>
+
+    </div>
+
+
+    <script src="script.js"></script>
+
+</body>
+</html>
